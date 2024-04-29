@@ -54,3 +54,10 @@ FROM customers cus
 LEFT JOIN FebSales Feb
 ON cus.order_id = Feb.orderID
 WHERE Feb.Quantity > 2 AND Quantity <> "Quantity Ordered";
+
+#8. All of the products in Los Angeles and their total quantity
+
+SELECT Product, SUM(Quantity)
+FROM BIT_DB.FebSales WHERE location like "%Los Angeles%"
+GROUP BY Product
+
