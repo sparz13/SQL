@@ -1,0 +1,56 @@
+#In this SQL, I'm querying a database with multiple tables in it to quantify statistics about customer and order data. 
+
+#1. Count of All Orders In January
+SELECT COUNT(orderID)
+FROM JanSales
+WHERE orderID <> "" 
+AND orderID <> "Order ID";
+
+#2. Total Count of iPhone orders in January
+
+SELECT COUNT(orderID)
+FROM JanSales
+WHERE orderID <> "" 
+AND orderID <> "Order ID"
+AND product = "iPhone";
+
+#3. Customer Account Numbers for all of Feburary
+
+SELECT DISTINCT cus.acctnum
+FROM customers cus
+INNER JOIN FebSales Feb
+ON cus.order_id = Feb.orderID
+WHERE Feb.orderID <> ''
+AND Feb.orderID <> "Order ID";
+
+#4. The lowest priced product in January
+
+SELECT DISTINCT product, price 
+FROM JanSales
+WHERE price IN (SELECT MIN(price) FROM JanSales);
+
+#5. Each Product and its Total Revenue for January Sales
+
+SELECT Product, ROUND(SUM(Quantity) * Price) AS Revenue
+FROM JanSales
+WHERE OrderID <> ""
+AND LENGTH(OrderID) = 6
+GROUP BY Product
+ORDER BY Revenue;
+
+#6. The product, total quantity, and revenue for products on 548 Lincoln St, Seattle, WA 98101 in Februray Sales
+
+SELECT Product
+, SUM(Quantity) AS Total_Amount
+, SUM(Quantity)* price AS Revenue 
+FROM FebSales
+WHERE location = "548 Lincoln St, Seattle, WA 98101"
+GROUP BY product;
+
+#7. How many customers have more than 2 products to an order and their average order.
+
+SELECT COUNT(distinct cus.acctnum), AVG(quantity*price)
+FROM customers cus
+LEFT JOIN FebSales Feb
+ON cus.order_id = Feb.orderID
+WHERE Feb.Quantity > 2 AND Quantity <> "Quantity Ordered";
