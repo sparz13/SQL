@@ -1,0 +1,160 @@
+#From a database with 11 different tables I queried the answer to different questions regarding customers, song tracks, various details about these tracks, and sales people. 
+
+
+#Found out all the customers who are not in the US
+SELECT FirstName, LastName, Country
+FROM chinook.customers
+WHERE Country <> "USA";
+
+#Found out all the customers who are in Brazil
+SELECT FirstName, LastName, Country
+FROM chinook.customers
+WHERE Country = "Brazil";
+
+
+#Found the customer name, invoice ID, invoice date, and billing country for all customer from Brazil
+SELECT cus.FirstName, 
+cus.LastName,
+inv.InvoiceId,
+inv.InvoiceDate,
+inv.BillingCountry
+FROM chinook.customers cus
+LEFT JOIN chinook.invoices inv
+ON cus.CustomerId = inv.CustomerId
+WHERE cus.country = "Brazil";
+
+#Found all employees who are a sales agent
+SELECT * FROM chinook.employees
+WHERE Title = "Sales Support Agent";
+
+#Found all unique countries from invoices
+SELECT DISTINCT BillingCountry 
+FROM chinook.invoices;
+
+#Found the name, title, and all invoice id for those in a sales agent role
+SELECT emp.FirstName, emp.LastName, emp.Title, inv.InvoiceID
+FROM chinook.employees emp
+INNER JOIN chinook.customers cus
+ON emp.EmployeeID = cus.SupportRepID
+INNER JOIN chinook.invoices inv
+ON inv.customerID = cus.customerID
+WHERE Title = "Sales Support Agent";
+
+#Found invoice totatl, customer name, customer country associated with each sales employee name, and ID
+SELECT inv.Total, 
+cus.FirstName, 
+cus.LastName,
+cus.Country,
+emp.FirstName, 
+emp.LastName,
+inv.InvoiceID
+FROM chinook.employees emp
+INNER JOIN chinook.customers cus
+ON emp.EmployeeID = cus.SupportRepID
+INNER JOIN chinook.invoices inv
+ON inv.customerID = cus.customerID
+WHERE Title = "Sales Support Agent";
+
+#Found the number of invoices in the year 2009
+SELECT COUNT(*)
+FROM chinook.invoices inv
+WHERE inv.InvoiceDate LIKE "%2009%";
+
+#Found the total sales of those invoice totals for 2009
+SELECT ROUND(SUM(inv.Total),2) AS 'Total_Sales_2009'
+FROM chinook.invoices inv
+WHERE inv.InvoiceDate LIKE "%2009%";
+
+#Found the track name assoicated with each invoice line item
+SELECT t.Name, invi.InvoiceLineId
+FROM chinook.tracks t
+INNER JOIN chinook.invoice_items invi
+on t.TrackID = invi.TrackID;
+
+#Found the track name and the artist name associated with each invoice line item
+SELECT t.Name, art.Name, invi.InvoiceLineId
+FROM chinook.tracks t
+INNER JOIN chinook.invoice_items invi
+on t.TrackID = invi.TrackID
+INNER JOIN chinook.albums al
+ON  t.Albumid = al.Albumid
+INNER JOIN chinook.artists art
+ON art.Artistid = al.Artistid
+;
+
+#Found the track name, album name, media type name, genre name for all tracks
+SELECT t.Name AS Track, 
+al.Title AS Album, 
+med.Name AS Media_Type, 
+gen.Name AS Genre
+FROM chinook.tracks t
+
+INNER JOIN chinook.albums al
+ON t.Albumid = al.Albumid
+
+INNER JOIN chinook.media_types med
+ON med.MediaTypeId = t.MediaTypeId
+
+INNER JOIN chinook.genres gen
+ON gen.GenreId = t.GenreId;
+
+#Found the employee name and title and the total they sold for sales employees
+SELECT emp.FirstName, 
+emp.LastName, 
+emp.Title, 
+Round(sum(Total),2) as Sum_Total
+FROM chinook.employees emp
+INNER JOIN chinook.customers cus
+ON emp.Employeeid = cus.SupportRepid
+INNER JOIN chinook.invoices inv
+ON inv.Customerid = cus.Customerid
+WHERE emp.Title LIKE "%Sales%"
+GROUP BY emp.LastName;
+
+#Found the sale employee with the most sales in 2009
+WITH temptable AS (
+  SELECT
+    emp.FirstName AS First_Name,
+    emp.LastName AS Last_Name,
+    emp.Title,
+    ROUND(SUM(inv.Total), 2) AS Sum_Total
+  FROM employees emp
+  INNER JOIN customers cus ON emp.EmployeeId = cus.SupportRepId
+  INNER JOIN invoices inv ON cus.CustomerId = inv.CustomerId
+  WHERE emp.Title LIKE '%Sales%'
+    AND inv.InvoiceDate LIKE '%2009%'
+  GROUP BY emp.LastName
+)
+SELECT First_Name, Last_Name, MAX(Sum_Total)
+FROM temptable;
+
+#Answered which genre has the longest songs on average and how long are they.
+WITH temptable2 AS ( SELECT gen.Name, AVG(t.Milliseconds) AS avg_milli
+FROM genres gen
+INNER JOIN tracks t
+ON gen.Genreid = t.Genreid
+GROUP BY gen.Name )
+
+SELECT Name, MAX(avg_milli) / 1000 / 60 AS avg_song_minutes
+FROM temptable2;
+
+#Answered how long was each song with the genre of Sci Fi & Fantasy for each track in minutes.
+SELECT t.Name, t.Milliseconds / 1000 /60
+FROM tracks t
+INNER JOIN genres gen
+ON t.Genreid = gen.Genreid
+WHERE gen.Name = "Sci Fi & Fantasy";
+
+#Answered how many customers bought a track in the genre Sci Fi and Fantasy. 
+SELECT Count(cus.Customerid)
+FROM customers cus
+INNER JOIN invoices inv
+ON cus.Customerid = inv.Customerid
+INNER JOIN invoice_items ii
+ON ii.invoiceid = inv.invoiceid
+INNER JOIN tracks t
+ON t.Trackid = ii.Trackid
+INNER JOIN genres gen
+ON gen.Genreid = t.Genreid
+WHERE gen.Name ="Sci Fi & Fantasy";
+
